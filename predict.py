@@ -43,7 +43,6 @@ def load_model(save_dir, gpu):
     return model
 
 def process_image(image):
-    # TODO: Process a PIL image for use in a PyTorch model
     pil_image = Image.open(image)
     pil_image.thumbnail((256,256))
     pil_image = pil_image.resize((224,224))
@@ -79,12 +78,7 @@ def main():
     print('classes_numpy is', classes_numpy)
     print('probs_numpy is', probs_numpy)
     print('model.class_to_idx is' , model.class_to_idx)
-#    idx = []
-#     for key in classes_numpy[0]:
-#         # print(key)
-#         # print(model.class_to_idx[key])
-#         idx.append(model.class_to_idx[str(key)])
-#     print (idx)
+
     with open('cat_to_name.json', 'r') as f:
         cat_to_name = json.load(f)
         print('cat_to_name is', cat_to_name)
