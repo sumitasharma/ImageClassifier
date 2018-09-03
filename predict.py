@@ -54,8 +54,6 @@ def process_image(image):
     return np_image
 
 def predict(image_path, model, topk=5):
-
-    # TODO: Implement the code to predict the class from an image file
     np_image = process_image(image_path)
     img = torch.FloatTensor(np_image).cuda()
     img.unsqueeze_(0)
