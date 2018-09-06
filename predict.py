@@ -25,17 +25,18 @@ def parse_args():
     parser.add_argument("--save_dir", type=str , default="./models")
     parser.add_argument("--top_k", type=int , default=5)
     parser.add_argument("--gpu", action="store_true")
+    parser.add_argument("--category_to_name_file", type=str , default="cat_to_name.json")
     parser.add_argument("--input", type=str, default="./data/test/1/image_06752.jpg")
     print(parser.parse_args())
     args_dict = vars(parser.parse_args())
     return args_dict
     
 def load_model(save_dir, gpu):
-    model = models.vgg16()
-   
+    # model = models.vgg16()
+    checkpoint = torch.load(save_dir + '/checkpoint')
+    model = getattr(models, checkpoint['arch'])(pretrained=True)
     if gpu:
         model.cuda()
-    checkpoint = torch.load(save_dir + '/checkpoint')
     model.classifier = checkpoint['classifier']
     model.load_state_dict(checkpoint['state_dict'])
     model.class_to_idx = checkpoint['class_to_idx']
@@ -44,8 +45,20 @@ def load_model(save_dir, gpu):
 
 def process_image(image):
     pil_image = Image.open(image)
-    pil_image.thumbnail((256,256))
+    width, height = pil_image.size
+    # print("width, height" , width, height)
+    aspect_ratio = width/height
+    # Resize the image so that shortest side is 256 and longer side is scaled per image dimensions
+    if(width > height):
+        new_height = 256
+        new_width = int(round(new_height*aspect_ratio))
+    else:
+        new_width = 256
+        new_height = int(round(new_width/aspect_ratio))
+    # print("new width, new_hight" , new_width, new_height)
+    pil_image = pil_image.resize((new_width, new_height))
     pil_image = pil_image.resize((224,224))
+
     np_image = np.array(pil_image) / 255
     np_mean = np.array([0.485, 0.456, 0.406])
     np_std  = np.array([0.229, 0.224, 0.225])    
@@ -77,7 +90,7 @@ def main():
     print('probs_numpy is', probs_numpy)
     print('model.class_to_idx is' , model.class_to_idx)
 
-    with open('cat_to_name.json', 'r') as f:
+    with open(args_dict['category_to_name_file'], 'r') as f:
         cat_to_name = json.load(f)
         print('cat_to_name is', cat_to_name)
     name_to_prob = {}
