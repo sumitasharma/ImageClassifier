@@ -12,9 +12,14 @@ from torch import optim
 from torchvision import datasets, transforms, models
 
 models_dict = {'vgg16': models.vgg16(pretrained = True),
-               'resnet18': models.resnet18(pretrained = True),
+               'vgg19': models.vgg19(pretrained = True),
                'alexnet': models.alexnet(pretrained = True)
               }
+models_input_dict = {'vgg16': 25088,
+                     'vgg19': 25088,
+                     'alexnet': 9216
+                    }
+
 # Parses command line arguments and returns a dictionary of parsed arguments
 def parse_args():
     parser = argparse.ArgumentParser(description="Parser for Image Classifier Training")
@@ -80,9 +85,9 @@ def build_model(arch, hidden_units):
     for param in model.parameters():
         param.requires_grad = False
     classifier = nn.Sequential(OrderedDict([
-        ('fc1', nn.Linear(25088, 4096)),
+        ('fc1', nn.Linear(models_input_dict[arch], 2000)),
         ('relu', nn.ReLU()),
-        ('fc2', nn.Linear(4096, hidden_units)),
+        ('fc2', nn.Linear(2000, hidden_units)),
         ('relu', nn.ReLU()),
         ('fc3', nn.Linear(hidden_units, 102)),
         ('output', nn.LogSoftmax(dim =1))]))
@@ -160,9 +165,9 @@ def check_accuracy_on_test(model, testloader, device = 'cpu'):
 
     print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))
 
-def save_model(model, optimizer, training_datasets, save_dir):
+def save_model(model, optimizer, training_datasets, save_dir, arch):
     model.class_to_idx = training_datasets.class_to_idx
-    checkpoint = {'arch':'vgg16',
+    checkpoint = {'arch': arch,
                   'state_dict': model.state_dict(),
                   'optimizer_state_dict': optimizer.state_dict(),
                   'class_to_idx': model.class_to_idx,
@@ -187,9 +192,17 @@ def main():
     else:
         print('Running on CPU')
         device_type = 'cpu'
+        
+    if args_dict['arch'] == 'vgg16':
+        print('Running vgg16')
+    elif args_dict['arch'] == 'alexnet':
+        print('Running alexnet')
+    elif args_dict['arch'] == 'resnet18':
+        print('Running resnet18')
+        
     model ,optimizer = train_model(model, train_dataloader, validation_dataloader, args_dict['epochs'], 40, args_dict['learning_rate'], device_type)
     check_accuracy_on_test(model, test_dataloader, device_type)
-    save_model(model, optimizer, training_datasets, args_dict['save_dir'])
+    save_model(model, optimizer, training_datasets, args_dict['save_dir'], args_dict['arch'])
 
     
 if __name__ == "__main__":
